@@ -1,0 +1,179 @@
+## RingBuffer Implementation
+##
+## Part of the Alya Language package ecosystem (https://github.com/alya-lang).
+## Provides a fixed-capacity circular FIFO buffer with O(1) push, pop, and peek operations.
+
+import "./types.alya"
+
+## Creates a new empty circular RingBuffer with the given maximum capacity.
+##
+## ### Parameters
+## - `capacity`: Maximum number of items the buffer can hold. Must be >= 1.
+##
+## ### Returns
+## A new `RingBuffer` instance.
+pub function make_ring_buffer(capacity: int = 16) -> RingBuffer
+    if capacity < 1
+        capacity = 1
+    end
+    let slots = []
+    let i = 0
+    while i < capacity
+        slots.push(0)
+        i += 1
+    end
+    return RingBuffer {
+        data: slots,
+        head: 0,
+        tail: 0,
+        len: 0,
+        cap: capacity
+    }
+end
+
+## Appends an item to the ring buffer. Fails and returns false if the buffer is full.
+##
+## ### Parameters
+## - `item`: The value to append.
+##
+## ### Returns
+## True if the item was added, false if the buffer was already full.
+pub function RingBuffer.push(self, item) -> bool
+    if self.len >= self.cap
+        return false
+    end
+    self.data[self.tail] = item
+    self.tail = (self.tail + 1) % self.cap
+    self.len += 1
+    return true
+end
+
+## Appends an item to the ring buffer, overwriting the oldest item if full.
+##
+## ### Parameters
+## - `item`: The value to append.
+##
+## ### Returns
+## True always; drops the oldest element when capacity was reached.
+pub function RingBuffer.push_overwrite(self, item) -> bool
+    if self.len >= self.cap
+        self.data[self.tail] = item
+        self.tail = (self.tail + 1) % self.cap
+        self.head = (self.head + 1) % self.cap
+        return true
+    end
+    self.data[self.tail] = item
+    self.tail = (self.tail + 1) % self.cap
+    self.len += 1
+    return true
+end
+
+## Removes and returns the oldest item from the buffer, or null if empty.
+##
+## ### Parameters
+## None.
+##
+## ### Returns
+## The oldest item, or null when the buffer holds no items.
+pub function RingBuffer.pop(self)
+    if self.len <= 0
+        return null
+    end
+    let item = self.data[self.head]
+    self.data[self.head] = 0
+    self.head = (self.head + 1) % self.cap
+    self.len -= 1
+    return item
+end
+
+## Returns the oldest item without removing it, or null if empty.
+##
+## ### Parameters
+## None.
+##
+## ### Returns
+## The oldest item, or null when empty.
+pub function RingBuffer.peek(self)
+    if self.len <= 0
+        return null
+    end
+    return self.data[self.head]
+end
+
+## Returns the most recently pushed item without removing it, or null if empty.
+##
+## ### Parameters
+## None.
+##
+## ### Returns
+## The newest item, or null when empty.
+pub function RingBuffer.peek_last(self)
+    if self.len <= 0
+        return null
+    end
+    let last_idx = (self.tail - 1 + self.cap) % self.cap
+    return self.data[last_idx]
+end
+
+## Returns true if the buffer has reached maximum capacity.
+##
+## ### Returns
+## True when full, false otherwise.
+pub function RingBuffer.is_full(self) -> bool
+    return self.len >= self.cap
+end
+
+## Returns true if the buffer currently contains zero elements.
+##
+## ### Returns
+## True when empty, false otherwise.
+pub function RingBuffer.is_empty(self) -> bool
+    return self.len == 0
+end
+
+## Returns the number of active items currently stored.
+##
+## ### Returns
+## The element count.
+pub function RingBuffer.size(self) -> int
+    return self.len
+end
+
+## Returns the maximum item capacity of the ring buffer.
+##
+## ### Returns
+## The buffer capacity.
+pub function RingBuffer.capacity(self) -> int
+    return self.cap
+end
+
+## Clears all elements from the buffer and resets head and tail pointers.
+##
+## ### Returns
+## No return value.
+pub function RingBuffer.clear(self)
+    let i = 0
+    while i < self.cap
+        self.data[i] = 0
+        i += 1
+    end
+    self.head = 0
+    self.tail = 0
+    self.len = 0
+end
+
+## Returns a new array containing all elements ordered from oldest to newest.
+##
+## ### Returns
+## Ordered array of buffered items.
+pub function RingBuffer.to_array(self)
+    let res = []
+    let idx = self.head
+    let count = 0
+    while count < self.len
+        res.push(self.data[idx])
+        idx = (idx + 1) % self.cap
+        count += 1
+    end
+    return res
+end

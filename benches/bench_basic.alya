@@ -7,71 +7,65 @@ import "../src/lib.alya" as pkg
 function main()
     let runner = bench_runner("datatypes Micro-Benchmarks")
 
-    # Bench 1: hello() facade function — 100k iterations
-    bench_start(runner, 100000)
+    # Bench 1: RingBuffer push + pop throughput — 50k iterations
+    let rb = pkg::new_ring_buffer(32)
+    bench_start(runner, 50000)
     let i = 0
-    while i < 100000
-        pkg::hello("Alya")
+    while i < 50000
+        rb.push(i)
+        if rb.is_full()
+            rb.pop()
+        end
         i += 1
     end
-    bench_stop(runner, "hello() 100k calls")
+    bench_stop(runner, "RingBuffer push/pop 50k ops")
 
-    # Bench 2: process() default call — 100k iterations
-    bench_start(runner, 100000)
+    # Bench 2: DoublyLinkedList push_back + pop_front — 50k iterations
+    let list = pkg::new_linked_list()
+    bench_start(runner, 50000)
     let j = 0
-    while j < 100000
-        pkg::process()
+    while j < 50000
+        list.push_back(j)
+        if list.size() > 16
+            list.pop_front()
+        end
         j += 1
     end
-    bench_stop(runner, "process() default 100k calls")
+    bench_stop(runner, "DoublyLinkedList push/pop 50k ops")
 
-    # Bench 3: make_config + format_config — 50k iterations
-    bench_start(runner, 50000)
+    # Bench 3: Trie insert & contains — 10k iterations
+    let tr = pkg::new_trie()
+    bench_start(runner, 10000)
     let k = 0
-    while k < 50000
-        let cfg = pkg::new_config("bench", 1, pkg::DatatypesPriority.High, pkg::DatatypesStyle.Formal)
-        pkg::core_format_custom(cfg)
+    while k < 10000
+        tr.insert("key_" + str(k % 100), k)
+        tr.contains("key_" + str(k % 100))
         k += 1
     end
-    bench_stop(runner, "new_config + format_custom 50k calls")
+    bench_stop(runner, "Trie insert + lookup 10k ops")
 
-    # Bench 4: process_batch with 10-element array — 10k iterations
-    let labels = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
-    bench_start(runner, 10000)
+    # Bench 4: BitSet set & get — 100k iterations
+    let bs = pkg::new_bit_set(256)
+    bench_start(runner, 100000)
+    let b = 0
+    while b < 100000
+        let bit = b % 256
+        bs.set(bit)
+        bs.get(bit)
+        b += 1
+    end
+    bench_stop(runner, "BitSet set/get 100k ops")
+
+    # Bench 5: BloomFilter add & contains — 20k iterations
+    let bf = pkg::new_bloom_filter(1000, 0.01)
+    bench_start(runner, 20000)
     let m = 0
-    while m < 10000
-        pkg::process_batch(labels)
+    while m < 20000
+        bf.add("item_" + str(m % 500))
+        bf.contains("item_" + str(m % 500))
         m += 1
     end
-    bench_stop(runner, "process_batch 10-item list 10k calls")
-
-    # Bench 5: struct method cfg.summary() — 200k iterations
-    let summ_cfg = pkg::new_config("summary-bench", 5)
-    bench_start(runner, 200000)
-    let s = 0
-    while s < 200000
-        summ_cfg.summary()
-        s += 1
-    end
-    bench_stop(runner, "cfg.summary() 200k calls")
-
-    # Bench 6: clamp() utility — 500k iterations
-    bench_start(runner, 500000)
-    let c = 0
-    while c < 500000
-        pkg::clamp(c, 0, 100)
-        c += 1
-    end
-    bench_stop(runner, "clamp() utility 500k calls")
-
-    # Bench 7: repeat_string() utility — 10k iterations
-    bench_start(runner, 10000)
-    let r = 0
-    while r < 10000
-        pkg::repeat_string("bench", 10)
-        r += 1
-    end
-    bench_stop(runner, "repeat_string() 10k calls")
+    bench_stop(runner, "BloomFilter add/check 20k ops")
 
     bench_summary(runner)
 end

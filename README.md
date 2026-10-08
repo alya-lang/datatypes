@@ -11,15 +11,13 @@ Advanced data structures for Alya: RingBuffer, DoublyLinkedList, Trie, BitSet, B
 
 ## 🌟 Features
 
-- ⚡ **Lightweight & High Performance**: Minimal memory overhead, zero runtime bloat, and fast native execution
-- 🧩 **Modular Architecture**: Layered multi-module design featuring a clean public facade (`src/lib.alya`), rich data models (`src/types.alya`), and encapsulated core formatters (`src/core/formatter.alya`)
-- 🔒 **Public/Private Visibility (`pub`)**: Fine-grained export control with `pub` for public functions, structs, and enums, keeping internal helper functions private and encapsulated
-- 🎭 **Structural Duck Typing & Interfaces**: Dynamic interface dispatch (`Summarizable`, `Describable`) without brittle inheritance hierarchies
-- 📦 **Rich Domain Models & Enums**: Idiomatic `enum` types (`DatatypesStatus`, `DatatypesPriority`, `DatatypesStyle`) and typed data containers (`DatatypesConfig`, `DatatypesResult`, `DatatypesStats`)
-- 🎯 **Advanced Pattern Matching**: Clean branching with `when` expressions, range matching, and condition guards
-- 🛡️ **Defensive Result Pattern**: Structured error handling and outcome encapsulation with `ok_result` and `error_result`
-- 🧪 **Enterprise Test & Benchmark Suite**: 100% test coverage with standard assertions (`std/test`) and micro-benchmarking (`std/test` bench runner)
-- 🚩 **Feature-Gated API Slices**: Optional capability slices via `[features]` in `alya.toml` (`default = ["extras"]`) and `@cfg(feature = "extras")` gating with a `@cfg(not(feature = "extras"))` fallback stub (see `src/core/extras.alya`)
+- ⚡ **Lightweight & High Performance**: Zero unnecessary heap overhead, fast native operations across all data structures
+- 🔄 **RingBuffer**: Fixed-capacity circular FIFO buffer supporting O(1) push, pop, peek, and capacity overwriting
+- 🔗 **DoublyLinkedList**: Doubly-linked list with O(1) push/pop at both front and back ends
+- 🌳 **Trie (Prefix Tree)**: High-speed string indexing, prefix search (`starts_with`), and autocompletion (`keys_with_prefix`)
+- 🔢 **BitSet**: Compact 64-bit word-aligned bit array with bitwise set algebra (`union`, `intersection`), popcount, and iteration
+- 🌸 **BloomFilter**: Probabilistic set membership filter with configurable capacity and dual-hash distribution
+- 🧪 **Comprehensive Verification**: 100% test coverage with automated unit tests and throughput micro-benchmarks
 
 ---
 
@@ -31,25 +29,25 @@ datatypes/
 ├── .editorconfig           # Uniform formatting rules across IDEs and editors
 ├── .gitignore              # Ecosystem standard ignore filters
 ├── .vscode/                # VS Code workspace settings, DAP launch configurations & tasks
-├── alya.toml               # Package manifest with dependencies, [features] and optional [build]
-├── c/                      # (Optional) Native C sources for zero-dependency FFI packages
+├── alya.toml               # Package manifest with dependencies and metadata
 ├── src/
-│   ├── lib.alya            # Public API facade (pub exports, re-exports & pipeline runners)
-│   ├── types.alya          # Data models, pub enums, pub structs, and struct methods
-│   ├── ffi.alya            # (Optional) Native extern "C" declarations
-│   └── core/               # Subdirectory module hierarchy
-│       ├── formatter.alya  # Domain formatting routines, salutation builders & pattern matchers
-│       └── extras.alya     # Feature-gated (`extras`) optional API slice with `@cfg` gating
+│   ├── lib.alya            # Public API facade and constructor exports
+│   ├── types.alya          # Core struct definitions (RingBuffer, Trie, BitSet, etc.)
+│   ├── ring_buffer.alya    # Circular buffer implementation
+│   ├── linked_list.alya    # Doubly-linked list implementation
+│   ├── trie.alya           # Trie prefix tree implementation
+│   ├── bit_set.alya        # Word-backed bitset implementation
+│   └── bloom_filter.alya   # Bloom filter implementation
 ├── examples/
-│   └── demo.alya           # Comprehensive runnable walkthrough of all package capabilities
+│   └── demo.alya           # Comprehensive runnable walkthrough of all data structures
 ├── tests/
-│   └── test_basic.alya     # Automated test suite with 100% feature coverage
+│   └── test_basic.alya     # Automated test suite with 90+ test assertions
 └── benches/
-    └── bench_basic.alya    # Micro-benchmarks measuring performance and throughput
+    └── bench_basic.alya    # Micro-benchmarks measuring throughput
 ```
 
 > [!NOTE]
-> **Visibility & Modularity:** Symbols annotated with `pub` (`pub function`, `pub struct`, `pub enum`, `pub interface`) are exported to external consumers and re-exporting modules. Symbols without `pub` remain strictly internal to their declaring module, preventing symbol collisions and implementation leakage.
+> **Visibility & Modularity:** Symbols annotated with `pub` (`pub function`, `pub struct`) are exported to external callers. Internal helper functions remain private to prevent namespace pollution.
 
 ---
 
@@ -77,18 +75,33 @@ alya install
 import "datatypes" as pkg
 
 function main()
-    # 1. Basic facade call with default parameter
-    let greeting = pkg::hello()
-    say f"Greeting:  {greeting}"
+    # 1. Circular RingBuffer
+    let rb = pkg::new_ring_buffer(3)
+    rb.push("alpha")
+    rb.push("beta")
+    say f"RingBuffer peek: {rb.peek()}"
 
-    # 2. Struct configuration with priority, style, and methods
-    let cfg = pkg::new_config("Community", 5, pkg::DatatypesPriority.High, pkg::DatatypesStyle.Formal)
-    say f"Summary:   {cfg.summary()}"
-    say f"Formatted: {pkg::core_format_custom(cfg)}"
+    # 2. DoublyLinkedList
+    let list = pkg::new_linked_list()
+    list.push_back("Tail")
+    list.push_front("Head")
+    say f"List front: {list.peek_front()}"
 
-    # 3. Processing pipeline returning Result model
-    let res = pkg::process("Analytics", 3, pkg::DatatypesPriority.Critical)
-    say f"Outcome:   {res.message}"
+    # 3. Trie Prefix Tree
+    let tr = pkg::new_trie()
+    tr.insert("apple", 1)
+    say f"Has 'apple': {tr.contains('apple')}"
+    say f"Matches 'app': {tr.keys_with_prefix('app')}"
+
+    # 4. BitSet
+    let bs = pkg::new_bit_set(64)
+    bs.set(10)
+    say f"Bit 10 is set: {bs.get(10)}"
+
+    # 5. BloomFilter
+    let bf = pkg::new_bloom_filter(100, 0.01)
+    bf.add("test_key")
+    say f"BloomFilter contains: {bf.contains('test_key')}"
 end
 
 main()
@@ -100,45 +113,46 @@ main()
 
 | Symbol | Visibility | Description |
 |---|---|---|
-| `hello(name = "World")` | `pub function` | Returns a formatted greeting string. Defaults to `"World"` if null or empty. |
-| `new_config(name, count, priority, style)` | `pub function` | Factory constructing a `DatatypesConfig` with sensible defaults. |
-| `make_config(name, count, priority, style, enabled, tags)` | `pub function` | Full constructor for `DatatypesConfig`. |
-| `process(label, count, priority)` | `pub function` | Runs processing pipeline, returning an `ok_result` `DatatypesResult`. |
-| `process_batch(labels)` | `pub function` | Formats an array of labels in batch, returning an array of strings. |
-| `ok_result(value, message)` | `pub function` | Constructs a successful `DatatypesResult` container (`status = 0`). |
-| `error_result(message, errors)` | `pub function` | Constructs a failed `DatatypesResult` container (`status = 1`). |
-| `make_stats(total, passed, failed, skipped)` | `pub function` | Constructs a `DatatypesStats` metrics record. |
-| `format_summary(cfg)` | `pub function` | Formats summary of a config instance (satisfies `Summarizable`). |
-| `format_description(cfg)` | `pub function` | Formats description of a config instance (satisfies `Describable`). |
-| `format_config(config)` | `pub function` | Multi-field formatter producing descriptive overview of a `DatatypesConfig`. |
-| `format_result(result)` | `pub function` | Formats a `DatatypesResult` into `[OK]` or `[ERROR]` status line. |
-| `format_stats(stats)` | `pub function` | Formats total checked items and success rate percentage. |
-| `clamp(n, min_val, max_val)` | `pub function` | Clamps an integer value to the closed range `[min_val, max_val]`. |
-| `pluralize(n, singular, plural)` | `pub function` | Pattern-matches count to return singular or plural noun form. |
-| `repeat_string(label, count)` | `pub function` | Repeats a string into an array of `count` items. |
-| `extra_greeting(name = "World")` | `pub function` (`extras` feature, default-on) | Enthusiastic greeting slice gated by `@cfg(feature = "extras")`; stub throws a descriptive error when the feature is off. |
-| `Summarizable` | `pub interface` | Structural contract requiring `summary(self) -> string`. |
-| `Describable` | `pub interface` | Structural contract requiring `describe(self) -> string` and `is_valid(self) -> int`. |
-| `DatatypesStatus` | `pub enum` | Lifecycle status codes (`Pending = 0`, `Active = 1`, `Archived = 2`, `Error = 3`). |
-| `DatatypesPriority` | `pub enum` | Priority tiers (`Low = 0`, `Normal = 1`, `High = 2`, `Critical = 3`). |
-| `DatatypesStyle` | `pub enum` | Presentation styles (`Standard = 0`, `Formal = 1`, `Casual = 2`). |
-| `DatatypesConfig` | `pub struct` | Primary configuration model (`name`, `count`, `priority`, `style`, `enabled`, `tags`). |
-| `DatatypesConfig.summary()` | `pub method` | Single-line formatted summary (satisfies `Summarizable`). |
-| `DatatypesConfig.describe()` | `pub method` | Detailed multi-field description (satisfies `Describable`). |
-| `DatatypesConfig.is_valid()` | `pub method` | Validation guard returning 1 if valid, 0 otherwise. |
-| `DatatypesConfig.is_enabled()` | `pub method` | Returns 1 if active, 0 if disabled. |
-| `DatatypesConfig.with_name(new_name)` | `pub method` | Immutable copy with updated name. |
-| `DatatypesConfig.with_priority(new_prio)` | `pub method` | Immutable copy with updated priority tier. |
-| `DatatypesResult` | `pub struct` | Operation outcome model (`value`, `status`, `message`, `errors`). |
-| `DatatypesResult.is_ok()` | `pub method` | Returns 1 if successful (`status == 0`), 0 otherwise. |
-| `DatatypesResult.is_error()` | `pub method` | Returns 1 if error (`status != 0`), 0 otherwise. |
-| `DatatypesResult.unwrap_or(fallback)` | `pub method` | Returns message on success, or fallback on error. |
-| `DatatypesStats` | `pub struct` | Run statistics model (`total`, `passed`, `failed`, `skipped`). |
-| `DatatypesStats.total_checked()` | `pub method` | Sum of passed and failed items count. |
-| `DatatypesStats.success_rate()` | `pub method` | Computed percentage string (e.g. `"95%"`). |
-
-> [!TIP]
-> **Internal Helpers & Documentation:** Public symbols are documented with `##` Markdown docstrings, enabling automatic API documentation generation via `alya doc`. Private functions such as `build_salutation` and `build_priority_label` in `src/core/formatter.alya` are not annotated with `pub` and remain encapsulated within their respective modules.
+| `new_ring_buffer(capacity)` | `pub function` | Constructs a new circular `RingBuffer` with the specified slot capacity. |
+| `RingBuffer.push(item)` | `pub method` | Appends an item to the buffer. Returns false if full. |
+| `RingBuffer.push_overwrite(item)` | `pub method` | Appends an item, overwriting the oldest entry if full. |
+| `RingBuffer.pop()` | `pub method` | Removes and returns the oldest item (FIFO). |
+| `RingBuffer.peek()` | `pub method` | Returns the oldest item without removing it. |
+| `RingBuffer.peek_last()` | `pub method` | Returns the newest item without removing it. |
+| `RingBuffer.is_full()` | `pub method` | Returns true if the buffer has reached capacity. |
+| `RingBuffer.is_empty()` | `pub method` | Returns true if the buffer holds zero elements. |
+| `RingBuffer.size()` | `pub method` | Returns the count of active buffered elements. |
+| `RingBuffer.to_array()` | `pub method` | Returns elements as an array ordered from oldest to newest. |
+| `new_linked_list()` | `pub function` | Constructs a new empty `DoublyLinkedList`. |
+| `DoublyLinkedList.push_back(val)` | `pub method` | Appends a value to the tail of the list in O(1). |
+| `DoublyLinkedList.push_front(val)` | `pub method` | Prepends a value to the head of the list in O(1). |
+| `DoublyLinkedList.pop_back()` | `pub method` | Removes and returns the tail element in O(1). |
+| `DoublyLinkedList.pop_front()` | `pub method` | Removes and returns the head element in O(1). |
+| `DoublyLinkedList.peek_front()` | `pub method` | Returns the head element without removing it. |
+| `DoublyLinkedList.peek_back()` | `pub method` | Returns the tail element without removing it. |
+| `DoublyLinkedList.contains(val)` | `pub method` | Returns true if the list contains the value. |
+| `DoublyLinkedList.remove(val)` | `pub method` | Removes the first occurrence of the value. |
+| `DoublyLinkedList.to_array()` | `pub method` | Returns elements as an array from head to tail. |
+| `new_trie()` | `pub function` | Constructs a new empty `Trie` prefix tree. |
+| `Trie.insert(key, value)` | `pub method` | Inserts a string key with an associated payload into the Trie. |
+| `Trie.contains(key)` | `pub method` | Returns true if the exact key exists in the Trie. |
+| `Trie.get(key)` | `pub method` | Returns the value associated with the key, or null if missing. |
+| `Trie.starts_with(prefix)` | `pub method` | Returns true if any key in the Trie starts with prefix. |
+| `Trie.keys_with_prefix(prefix)` | `pub method` | Returns an array of all keys beginning with prefix. |
+| `Trie.remove(key)` | `pub method` | Removes a key from the Trie. |
+| `new_bit_set(num_bits)` | `pub function` | Constructs a new `BitSet` with capacity for at least `num_bits`. |
+| `BitSet.set(bit)` | `pub method` | Sets the bit at index `bit` to 1. |
+| `BitSet.clear_bit(bit)` | `pub method` | Clears the bit at index `bit` (sets to 0). |
+| `BitSet.toggle(bit)` | `pub method` | Inverts the bit at index `bit`. |
+| `BitSet.get(bit)` | `pub method` | Returns true if the bit at index `bit` is 1. |
+| `BitSet.count_ones()` | `pub method` | Returns the total count of set bits (population count). |
+| `BitSet.union(other)` | `pub method` | Computes the bitwise OR with another BitSet. |
+| `BitSet.intersection(other)` | `pub method` | Computes the bitwise AND with another BitSet. |
+| `BitSet.to_array()` | `pub method` | Returns an array of active bit indices. |
+| `new_bloom_filter(expected, fp_rate)` | `pub function` | Constructs a new `BloomFilter` configured for expected elements and false positive rate. |
+| `BloomFilter.add(item)` | `pub method` | Inserts an item into the BloomFilter. |
+| `BloomFilter.contains(item)` | `pub method` | Probabilistic test: returns true if item is probably in set, false if definitely not. |
+| `BloomFilter.count()` | `pub method` | Returns the count of added elements. |
 
 ---
 
@@ -148,13 +162,6 @@ Run the automated test suite using `alya test`:
 
 ```bash
 alya test
-```
-
-Exercise feature selection (the `extras` slice is default-on):
-
-```bash
-alya test --features extras
-alya test --no-default-features
 ```
 
 Generate static API documentation:

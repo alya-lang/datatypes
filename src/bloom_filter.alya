@@ -1,0 +1,130 @@
+## BloomFilter Implementation
+##
+## Part of the Alya Language package ecosystem (https://github.com/alya-lang).
+## Provides a space-efficient probabilistic set membership filter with configurable false-positive rates.
+
+from "std/hash" import fnv1a, djb2
+import "./types.alya"
+import "./bit_set.alya"
+
+## Formats any item into a canonical string for hashing.
+function item_to_string(item) -> string
+    return "{item}"
+end
+
+## Creates a new BloomFilter configured for expected capacity and false positive probability.
+##
+## ### Parameters
+## - `expected_items`: Estimated number of unique elements to be inserted. Must be >= 1.
+## - `false_positive_rate`: Desired false positive probability between 0.0001 and 0.5. Defaults to 0.01 (1%).
+##
+## ### Returns
+## A new `BloomFilter` instance.
+pub function make_bloom_filter(expected_items: int = 1000, false_positive_rate: float = 0.01) -> BloomFilter
+    if expected_items < 1
+        expected_items = 1
+    end
+    # Bits required: approx 10 bits per item for 1% FP rate, 15 bits for 0.1%
+    let m = expected_items * 10
+    if false_positive_rate < 0.01
+        m = expected_items * 16
+    end
+    if m < 64
+        m = 64
+    end
+
+    # Optimal number of hash functions: k = (m / n) * ln(2) approx 7 for 10 bits/item
+    let k = 7
+    if false_positive_rate < 0.01
+        k = 10
+    else if false_positive_rate > 0.05
+        k = 4
+    end
+
+    let bs = make_bit_set(m)
+    return BloomFilter {
+        bit_set: bs,
+        num_hashes: k,
+        m_bits: m,
+        item_count: 0
+    }
+end
+
+## Inserts an element into the BloomFilter.
+##
+## ### Parameters
+## - `item`: The element to add (converted to string representation).
+##
+## ### Returns
+## No return value.
+pub function BloomFilter.add(self, item)
+    let s = item_to_string(item)
+    let h1 = fnv1a(s)
+    let h2 = djb2(s)
+    if h2 == 0
+        h2 = 17
+    end
+    let j = 0
+    while j < self.num_hashes
+        let raw_idx = (h1 + j * h2) % self.m_bits
+        if raw_idx < 0
+            raw_idx += self.m_bits
+        end
+        self.bit_set.set(raw_idx)
+        j += 1
+    end
+    self.item_count += 1
+end
+
+## Tests whether an element is probably in the set or definitely not.
+##
+## ### Parameters
+## - `item`: The element to check.
+##
+## ### Returns
+## True if the element might be in the set, false if it is definitively absent.
+pub function BloomFilter.contains(self, item) -> bool
+    let s = item_to_string(item)
+    let h1 = fnv1a(s)
+    let h2 = djb2(s)
+    if h2 == 0
+        h2 = 17
+    end
+    let j = 0
+    while j < self.num_hashes
+        let raw_idx = (h1 + j * h2) % self.m_bits
+        if raw_idx < 0
+            raw_idx += self.m_bits
+        end
+        if not self.bit_set.get(raw_idx)
+            return false
+        end
+        j += 1
+    end
+    return true
+end
+
+## Clears all bits in the BloomFilter and resets the item count.
+##
+## ### Returns
+## No return value.
+pub function BloomFilter.clear(self)
+    self.bit_set.clear_all()
+    self.item_count = 0
+end
+
+## Returns the number of items inserted so far.
+##
+## ### Returns
+## Stored item count.
+pub function BloomFilter.count(self) -> int
+    return self.item_count
+end
+
+## Returns the bit vector capacity.
+##
+## ### Returns
+## Total bit count.
+pub function BloomFilter.capacity(self) -> int
+    return self.m_bits
+end

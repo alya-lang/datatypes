@@ -1,0 +1,202 @@
+## Trie Prefix Tree Implementation
+##
+## Part of the Alya Language package ecosystem (https://github.com/alya-lang).
+## Provides an efficient prefix tree (Trie) for fast string lookup, prefix queries, and autocomplete.
+
+import "./types.alya"
+
+## Creates a new internal Trie node.
+function make_trie_node() -> TrieNode
+    return TrieNode {
+        children: {},
+        is_end: false,
+        value: null
+    }
+end
+
+## Creates a new empty Trie.
+##
+## ### Returns
+## A new empty `Trie` instance.
+pub function make_trie() -> Trie
+    return Trie {
+        root: make_trie_node(),
+        count: 0
+    }
+end
+
+## Inserts a string key with an associated value into the Trie.
+##
+## ### Parameters
+## - `key`: String key to index.
+## - `value`: Associated payload (defaults to 1).
+##
+## ### Returns
+## No return value.
+pub function Trie.insert(self, key: string, value = 1)
+    let curr = self.root
+    let n = len(key)
+    let i = 0
+    while i < n
+        let ch = key[i]
+        if ch not in curr.children
+            curr.children[ch] = make_trie_node()
+        end
+        curr = curr.children[ch]
+        i += 1
+    end
+    if not curr.is_end
+        self.count += 1
+    end
+    curr.is_end = true
+    curr.value = value
+end
+
+## Checks if the exact key exists in the Trie.
+##
+## ### Parameters
+## - `key`: String key to search.
+##
+## ### Returns
+## True if present, false otherwise.
+pub function Trie.contains(self, key: string) -> bool
+    let curr = self.root
+    let n = len(key)
+    let i = 0
+    while i < n
+        let ch = key[i]
+        if ch not in curr.children
+            return false
+        end
+        curr = curr.children[ch]
+        i += 1
+    end
+    return curr.is_end
+end
+
+## Retrieves the associated payload for the given key, or null if missing.
+##
+## ### Parameters
+## - `key`: String key to look up.
+##
+## ### Returns
+## The stored value, or null if the key is not in the Trie.
+pub function Trie.get(self, key: string)
+    let curr = self.root
+    let n = len(key)
+    let i = 0
+    while i < n
+        let ch = key[i]
+        if ch not in curr.children
+            return null
+        end
+        curr = curr.children[ch]
+        i += 1
+    end
+    if curr.is_end
+        return curr.value
+    end
+    return null
+end
+
+## Checks if any indexed key begins with the specified prefix.
+##
+## ### Parameters
+## - `prefix`: Leading string prefix to test.
+##
+## ### Returns
+## True if at least one key matches the prefix, false otherwise.
+pub function Trie.starts_with(self, prefix: string) -> bool
+    let curr = self.root
+    let n = len(prefix)
+    let i = 0
+    while i < n
+        let ch = prefix[i]
+        if ch not in curr.children
+            return false
+        end
+        curr = curr.children[ch]
+        i += 1
+    end
+    return true
+end
+
+## Collects all keys stored under the node matching the given prefix.
+function collect_keys(node, current_str: string, results)
+    if node.is_end
+        results.push(current_str)
+    end
+    for ch in keys(node.children)
+        let child = node.children[ch]
+        collect_keys(child, current_str + ch, results)
+    end
+end
+
+## Returns an array of all keys stored in the Trie that begin with prefix.
+##
+## ### Parameters
+## - `prefix`: Substring prefix to search.
+##
+## ### Returns
+## Array of matching full keys.
+pub function Trie.keys_with_prefix(self, prefix: string)
+    let res = []
+    let curr = self.root
+    let n = len(prefix)
+    let i = 0
+    while i < n
+        let ch = prefix[i]
+        if ch not in curr.children
+            return res
+        end
+        curr = curr.children[ch]
+        i += 1
+    end
+    collect_keys(curr, prefix, res)
+    return res
+end
+
+## Removes a key from the Trie.
+##
+## ### Parameters
+## - `key`: String key to remove.
+##
+## ### Returns
+## True if the key was found and removed, false otherwise.
+pub function Trie.remove(self, key: string) -> bool
+    let curr = self.root
+    let n = len(key)
+    let i = 0
+    while i < n
+        let ch = key[i]
+        if ch not in curr.children
+            return false
+        end
+        curr = curr.children[ch]
+        i += 1
+    end
+    if curr.is_end
+        curr.is_end = false
+        curr.value = null
+        self.count -= 1
+        return true
+    end
+    return false
+end
+
+## Returns the number of distinct keys stored in the Trie.
+##
+## ### Returns
+## Total key count.
+pub function Trie.size(self) -> int
+    return self.count
+end
+
+## Clears all keys from the Trie.
+##
+## ### Returns
+## No return value.
+pub function Trie.clear(self)
+    self.root = make_trie_node()
+    self.count = 0
+end

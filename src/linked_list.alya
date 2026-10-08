@@ -1,0 +1,216 @@
+## DoublyLinkedList Implementation
+##
+## Part of the Alya Language package ecosystem (https://github.com/alya-lang).
+## Provides a doubly-linked list supporting O(1) front and back mutations.
+
+import "./types.alya"
+
+## Creates a new empty DoublyLinkedList.
+##
+## ### Returns
+## A new empty `DoublyLinkedList` instance.
+pub function make_linked_list() -> DoublyLinkedList
+    return DoublyLinkedList {
+        head: null,
+        tail: null,
+        len: 0
+    }
+end
+
+## Appends an element to the back (tail) of the list.
+##
+## ### Parameters
+## - `val`: Value to append.
+##
+## ### Returns
+## No return value.
+pub function DoublyLinkedList.push_back(self, val)
+    let node = ListNode { val: val, next: null, prev: self.tail }
+    if self.tail is not null
+        self.tail.next = node
+        self.tail = node
+    else
+        self.head = node
+        self.tail = node
+    end
+    self.len += 1
+end
+
+## Prepends an element to the front (head) of the list.
+##
+## ### Parameters
+## - `val`: Value to prepend.
+##
+## ### Returns
+## No return value.
+pub function DoublyLinkedList.push_front(self, val)
+    let node = ListNode { val: val, next: self.head, prev: null }
+    if self.head is not null
+        self.head.prev = node
+        self.head = node
+    else
+        self.head = node
+        self.tail = node
+    end
+    self.len += 1
+end
+
+## Removes and returns the element at the back (tail) of the list, or null if empty.
+##
+## ### Returns
+## The popped back value, or null when empty.
+pub function DoublyLinkedList.pop_back(self)
+    if self.tail is null
+        return null
+    end
+    let node = self.tail
+    self.tail = node.prev
+    if self.tail is not null
+        self.tail.next = null
+    else
+        self.head = null
+    end
+    node.next = null
+    node.prev = null
+    self.len -= 1
+    return node.val
+end
+
+## Removes and returns the element at the front (head) of the list, or null if empty.
+##
+## ### Returns
+## The popped front value, or null when empty.
+pub function DoublyLinkedList.pop_front(self)
+    if self.head is null
+        return null
+    end
+    let node = self.head
+    self.head = node.next
+    if self.head is not null
+        self.head.prev = null
+    else
+        self.tail = null
+    end
+    node.next = null
+    node.prev = null
+    self.len -= 1
+    return node.val
+end
+
+## Returns the front (head) value without removing it, or null if empty.
+##
+## ### Returns
+## The front element, or null when empty.
+pub function DoublyLinkedList.peek_front(self)
+    if self.head is null
+        return null
+    end
+    return self.head.val
+end
+
+## Returns the back (tail) value without removing it, or null if empty.
+##
+## ### Returns
+## The back element, or null when empty.
+pub function DoublyLinkedList.peek_back(self)
+    if self.tail is null
+        return null
+    end
+    return self.tail.val
+end
+
+## Checks if the list contains the given value.
+##
+## ### Parameters
+## - `val`: Value to search for.
+##
+## ### Returns
+## True if found, false otherwise.
+pub function DoublyLinkedList.contains(self, val) -> bool
+    let curr = self.head
+    while curr is not null
+        if curr.val == val
+            return true
+        end
+        curr = curr.next
+    end
+    return false
+end
+
+## Removes the first occurrence of the given value from the list.
+##
+## ### Parameters
+## - `val`: Value to remove.
+##
+## ### Returns
+## True if an element was found and removed, false otherwise.
+pub function DoublyLinkedList.remove(self, val) -> bool
+    let curr = self.head
+    while curr is not null
+        if curr.val == val
+            if curr.prev is not null
+                curr.prev.next = curr.next
+            else
+                self.head = curr.next
+            end
+            if curr.next is not null
+                curr.next.prev = curr.prev
+            else
+                self.tail = curr.prev
+            end
+            curr.next = null
+            curr.prev = null
+            self.len -= 1
+            return true
+        end
+        curr = curr.next
+    end
+    return false
+end
+
+## Returns true if the list contains zero elements.
+##
+## ### Returns
+## True when empty, false otherwise.
+pub function DoublyLinkedList.is_empty(self) -> bool
+    return self.len == 0
+end
+
+## Returns the number of elements in the list.
+##
+## ### Returns
+## Total count of stored nodes.
+pub function DoublyLinkedList.size(self) -> int
+    return self.len
+end
+
+## Clears all elements from the list, releasing node references.
+##
+## ### Returns
+## No return value.
+pub function DoublyLinkedList.clear(self)
+    let curr = self.head
+    while curr is not null
+        let next_node = curr.next
+        curr.prev = null
+        curr.next = null
+        curr = next_node
+    end
+    self.head = null
+    self.tail = null
+    self.len = 0
+end
+
+## Converts the list into a forward-ordered standard array.
+##
+## ### Returns
+## Array containing list elements from head to tail.
+pub function DoublyLinkedList.to_array(self)
+    let res = []
+    let curr = self.head
+    while curr is not null
+        res.push(curr.val)
+        curr = curr.next
+    end
+    return res
+end

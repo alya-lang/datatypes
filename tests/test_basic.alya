@@ -9,167 +9,187 @@ function main()
     let r = runner_new()
 
     # ═══════════════════════════════════════════════════════════
-    # 1. Facade Greeting & Sanitization
+    # 1. RingBuffer Tests
     # ═══════════════════════════════════════════════════════════
-    let res = pkg::hello("Alya")
-    runner_assert_str_eq(r, res, "Hello, Alya!", "pkg::hello returns formatted greeting")
+    let rb = pkg::new_ring_buffer(3)
+    runner_assert_true(r, rb.is_empty(), "ring buffer starts empty")
+    runner_assert_false(r, rb.is_full(), "ring buffer starts not full")
+    runner_assert_eq(r, rb.size(), 0, "ring buffer initial size is 0")
+    runner_assert_eq(r, rb.capacity(), 3, "ring buffer capacity is 3")
 
-    let default_res = pkg::hello()
-    runner_assert_str_eq(r, default_res, "Hello, World!", "pkg::hello() defaults to World")
+    runner_assert_true(r, rb.push(10), "rb.push(10) succeeds")
+    runner_assert_true(r, rb.push(20), "rb.push(20) succeeds")
+    runner_assert_eq(r, rb.size(), 2, "rb size is 2 after two pushes")
+    runner_assert_eq(r, rb.peek(), 10, "rb peek is oldest element 10")
+    runner_assert_eq(r, rb.peek_last(), 20, "rb peek_last is newest element 20")
 
-    let null_res = pkg::hello(null)
-    runner_assert_str_eq(r, null_res, "Hello, World!", "pkg::hello(null) sanitizes null to World")
+    runner_assert_true(r, rb.push(30), "rb.push(30) succeeds, filling buffer")
+    runner_assert_true(r, rb.is_full(), "rb is full at capacity 3")
+    runner_assert_false(r, rb.push(40), "rb.push(40) fails when buffer is full")
 
-    let empty_res = pkg::hello("")
-    runner_assert_str_eq(r, empty_res, "Hello, World!", "pkg::hello(\"\") sanitizes empty string to World")
+    # Overwrite push
+    runner_assert_true(r, rb.push_overwrite(40), "rb.push_overwrite(40) succeeds")
+    runner_assert_eq(r, rb.peek(), 20, "rb peek advances to 20 after overwrite")
+    runner_assert_eq(r, rb.peek_last(), 40, "rb peek_last is 40")
 
-    # ═══════════════════════════════════════════════════════════
-    # 2. Enumeration Values
-    # ═══════════════════════════════════════════════════════════
-    runner_assert_eq(r, pkg::DatatypesStatus.Pending, 0, "DatatypesStatus.Pending == 0")
-    runner_assert_eq(r, pkg::DatatypesStatus.Active, 1, "DatatypesStatus.Active == 1")
-    runner_assert_eq(r, pkg::DatatypesStatus.Archived, 2, "DatatypesStatus.Archived == 2")
-    runner_assert_eq(r, pkg::DatatypesStatus.Error, 3, "DatatypesStatus.Error == 3")
+    # Pop order
+    runner_assert_eq(r, rb.pop(), 20, "rb.pop() yields 20")
+    runner_assert_eq(r, rb.pop(), 30, "rb.pop() yields 30")
+    runner_assert_eq(r, rb.pop(), 40, "rb.pop() yields 40")
+    runner_assert_true(r, rb.is_empty(), "rb is empty after popping all")
 
-    runner_assert_eq(r, pkg::DatatypesPriority.Low, 0, "DatatypesPriority.Low == 0")
-    runner_assert_eq(r, pkg::DatatypesPriority.Normal, 1, "DatatypesPriority.Normal == 1")
-    runner_assert_eq(r, pkg::DatatypesPriority.High, 2, "DatatypesPriority.High == 2")
-    runner_assert_eq(r, pkg::DatatypesPriority.Critical, 3, "DatatypesPriority.Critical == 3")
+    # to_array
+    rb.push(1)
+    rb.push(2)
+    let rb_arr = rb.to_array()
+    runner_assert_eq(r, len(rb_arr), 2, "rb.to_array() length matches")
+    runner_assert_eq(r, rb_arr[0], 1, "rb.to_array()[0] is 1")
+    runner_assert_eq(r, rb_arr[1], 2, "rb.to_array()[1] is 2")
 
-    runner_assert_eq(r, pkg::DatatypesStyle.Standard, 0, "DatatypesStyle.Standard == 0")
-    runner_assert_eq(r, pkg::DatatypesStyle.Formal, 1, "DatatypesStyle.Formal == 1")
-    runner_assert_eq(r, pkg::DatatypesStyle.Casual, 2, "DatatypesStyle.Casual == 2")
-
-    # ═══════════════════════════════════════════════════════════
-    # 3. Struct Models & Factory Constructors
-    # ═══════════════════════════════════════════════════════════
-    let cfg = pkg::new_config("Community", 5, pkg::DatatypesPriority.High, pkg::DatatypesStyle.Formal)
-    runner_assert_str_eq(r, cfg.name, "Community", "cfg.name is initialized correctly")
-    runner_assert_eq(r, cfg.count, 5, "cfg.count is initialized correctly")
-    runner_assert_eq(r, cfg.priority, 2, "cfg.priority is initialized to High (2)")
-    runner_assert_eq(r, cfg.style, 1, "cfg.style is initialized to Formal (1)")
-    runner_assert_eq(r, cfg.enabled, 1, "cfg.enabled defaults to 1")
-
-    let full_cfg = pkg::make_config("Full", 10, pkg::DatatypesPriority.Critical, pkg::DatatypesStyle.Casual, 0, ["tag1", "tag2"])
-    runner_assert_str_eq(r, full_cfg.name, "Full", "full_cfg.name is correct")
-    runner_assert_eq(r, full_cfg.count, 10, "full_cfg.count is correct")
-    runner_assert_eq(r, full_cfg.priority, 3, "full_cfg.priority is Critical (3)")
-    runner_assert_eq(r, full_cfg.enabled, 0, "full_cfg.enabled is 0")
-    runner_assert_eq(r, len(full_cfg.tags), 2, "full_cfg.tags has 2 elements")
+    rb.clear()
+    runner_assert_true(r, rb.is_empty(), "rb.clear() resets buffer")
 
     # ═══════════════════════════════════════════════════════════
-    # 4. Struct Methods & Immutability
+    # 2. DoublyLinkedList Tests
     # ═══════════════════════════════════════════════════════════
-    let summ = cfg.summary()
-    runner_assert_str_eq(r, summ, "Community (count: 5, active)", "cfg.summary() returns expected formatted summary")
+    let list = pkg::new_linked_list()
+    runner_assert_true(r, list.is_empty(), "linked list starts empty")
+    runner_assert_eq(r, list.size(), 0, "linked list size starts at 0")
 
-    let desc = cfg.describe()
-    runner_assert_true(r, len(desc) > 0, "cfg.describe() returns non-empty description")
+    list.push_back(100)
+    list.push_back(200)
+    list.push_front(50)
+    runner_assert_eq(r, list.size(), 3, "list size is 3 after 3 pushes")
+    runner_assert_eq(r, list.peek_front(), 50, "peek_front is 50")
+    runner_assert_eq(r, list.peek_back(), 200, "peek_back is 200")
+    runner_assert_true(r, list.contains(100), "list contains 100")
+    runner_assert_false(r, list.contains(999), "list does not contain 999")
 
-    runner_assert_eq(r, cfg.is_valid(), true, "cfg.is_valid() returns 1 for valid configuration")
-    runner_assert_eq(r, cfg.is_enabled(), 1, "cfg.is_enabled() returns 1")
+    # Array conversion
+    let l_arr = list.to_array()
+    runner_assert_eq(r, len(l_arr), 3, "list.to_array() length is 3")
+    runner_assert_eq(r, l_arr[0], 50, "first element is 50")
+    runner_assert_eq(r, l_arr[1], 100, "second element is 100")
+    runner_assert_eq(r, l_arr[2], 200, "third element is 200")
 
-    let updated_name_cfg = cfg.with_name("Contributors")
-    runner_assert_str_eq(r, updated_name_cfg.name, "Contributors", "with_name updates name")
-    runner_assert_str_eq(r, cfg.name, "Community", "original cfg.name remains immutable")
+    # Removal
+    runner_assert_true(r, list.remove(100), "list.remove(100) succeeds")
+    runner_assert_eq(r, list.size(), 2, "list size decreases to 2")
+    runner_assert_false(r, list.contains(100), "list no longer contains 100")
 
-    let updated_prio_cfg = cfg.with_priority(pkg::DatatypesPriority.Critical)
-    runner_assert_eq(r, updated_prio_cfg.priority, 3, "with_priority updates priority")
-    runner_assert_eq(r, cfg.priority, 2, "original cfg.priority remains unchanged")
+    # Pops
+    runner_assert_eq(r, list.pop_front(), 50, "pop_front yields 50")
+    runner_assert_eq(r, list.pop_back(), 200, "pop_back yields 200")
+    runner_assert_true(r, list.is_empty(), "list is empty after pops")
 
-    # ═══════════════════════════════════════════════════════════
-    # 5. Result Container & Methods
-    # ═══════════════════════════════════════════════════════════
-    let ok_res = pkg::ok_result(42, "Computed successfully")
-    runner_assert_eq(r, ok_res.is_ok(), true, "ok_res.is_ok() == 1")
-    runner_assert_eq(r, ok_res.is_error(), false, "ok_res.is_error() == 0")
-    runner_assert_str_eq(r, ok_res.unwrap_or("fallback"), "Computed successfully", "ok_res unwrap_or returns message")
-
-    let err_res = pkg::error_result("Failed operation", ["Invalid input", "Timeout"])
-    runner_assert_eq(r, err_res.is_ok(), false, "err_res.is_ok() == 0")
-    runner_assert_eq(r, err_res.is_error(), true, "err_res.is_error() == 1")
-    runner_assert_str_eq(r, err_res.unwrap_or("fallback"), "fallback", "err_res unwrap_or returns fallback")
-    runner_assert_eq(r, len(err_res.errors), 2, "err_res contains 2 error details")
-
-    # ═══════════════════════════════════════════════════════════
-    # 6. Statistics Container & Methods
-    # ═══════════════════════════════════════════════════════════
-    let stats = pkg::make_stats(20, 18, 2, 0)
-    runner_assert_eq(r, stats.total, 20, "stats.total == 20")
-    runner_assert_eq(r, stats.passed, 18, "stats.passed == 18")
-    runner_assert_eq(r, stats.failed, 2, "stats.failed == 2")
-    runner_assert_eq(r, stats.total_checked(), 20, "stats.total_checked() == 20")
-    runner_assert_str_eq(r, stats.success_rate(), "90%", "stats.success_rate() == 90%")
+    list.push_back(1)
+    list.clear()
+    runner_assert_true(r, list.is_empty(), "list.clear() empties list")
 
     # ═══════════════════════════════════════════════════════════
-    # 7. Duck Typing Polymorphism (Interfaces)
+    # 3. Trie Tests
     # ═══════════════════════════════════════════════════════════
-    let is_summ = cfg is pkg::Summarizable
-    runner_assert_true(r, is_summ, "cfg satisfies Summarizable interface implicitly")
-    let iface_summ = pkg::format_summary(cfg)
-    runner_assert_str_eq(r, iface_summ, "Community (count: 5, active)", "format_summary dispatches via Summarizable")
+    let tr = pkg::new_trie()
+    runner_assert_eq(r, tr.size(), 0, "trie starts with size 0")
 
-    let is_desc = cfg is pkg::Describable
-    runner_assert_true(r, is_desc, "cfg satisfies Describable interface implicitly")
-    let iface_desc = pkg::format_description(cfg)
-    runner_assert_true(r, len(iface_desc) > 0, "format_description dispatches via Describable")
+    tr.insert("apple", 1)
+    tr.insert("app", 2)
+    tr.insert("application", 3)
+    tr.insert("banana", 4)
+    runner_assert_eq(r, tr.size(), 4, "trie size is 4")
 
-    # Struct that does not implement Summarizable
-    let is_stats_summ = stats is pkg::Summarizable
-    runner_assert_false(r, is_stats_summ, "stats does not satisfy Summarizable interface")
+    runner_assert_true(r, tr.contains("apple"), "trie contains 'apple'")
+    runner_assert_true(r, tr.contains("app"), "trie contains 'app'")
+    runner_assert_false(r, tr.contains("ap"), "trie does not contain 'ap'")
+    runner_assert_true(r, tr.starts_with("ap"), "trie starts_with 'ap'")
+    runner_assert_false(r, tr.starts_with("cat"), "trie does not start with 'cat'")
 
-    # ═══════════════════════════════════════════════════════════
-    # 8. Workflow Processing & Batching
-    # ═══════════════════════════════════════════════════════════
-    let proc_res = pkg::process("Alice", 3, pkg::DatatypesPriority.High)
-    runner_assert_eq(r, proc_res.is_ok(), 1, "pkg::process returns successful result")
-    runner_assert_str_eq(r, proc_res.message, "OK", "pkg::process message is OK")
+    runner_assert_eq(r, tr.get("app"), 2, "tr.get('app') returns 2")
+    runner_assert_eq(r, tr.get("banana"), 4, "tr.get('banana') returns 4")
 
-    let batch_in = ["Alpha", "Beta", "Gamma"]
-    let batch_out = pkg::process_batch(batch_in)
-    runner_assert_eq(r, len(batch_out), 3, "process_batch returns 3 formatted records")
+    let app_keys = tr.keys_with_prefix("app")
+    runner_assert_eq(r, len(app_keys), 3, "prefix 'app' matches 3 keys")
 
-    let null_batch = pkg::process_batch(null)
-    runner_assert_eq(r, len(null_batch), 0, "process_batch(null) returns empty array")
+    runner_assert_true(r, tr.remove("apple"), "tr.remove('apple') succeeds")
+    runner_assert_eq(r, tr.size(), 3, "trie size decreases to 3")
+    runner_assert_false(r, tr.contains("apple"), "trie no longer contains 'apple'")
+    runner_assert_true(r, tr.contains("app"), "trie still contains 'app'")
 
-    # ═══════════════════════════════════════════════════════════
-    # 9. Control Flow & Pattern Matching Utilities
-    # ═══════════════════════════════════════════════════════════
-    runner_assert_eq(r, pkg::clamp(50, 0, 100), 50, "clamp within bounds")
-    runner_assert_eq(r, pkg::clamp(-10, 0, 100), 0, "clamp lower bound")
-    runner_assert_eq(r, pkg::clamp(150, 0, 100), 100, "clamp upper bound")
-
-    runner_assert_str_eq(r, pkg::pluralize(1, "record", "records"), "record", "pluralize 1 gives singular")
-    runner_assert_str_eq(r, pkg::pluralize(0, "record", "records"), "records", "pluralize 0 gives plural")
-    runner_assert_str_eq(r, pkg::pluralize(5, "record", "records"), "records", "pluralize 5 gives plural")
-
-    let repeated = pkg::repeat_string("item", 3)
-    runner_assert_eq(r, len(repeated), 3, "repeat_string produces 3 elements")
-    runner_assert_str_eq(r, repeated[0], "item", "repeated element matches input")
+    tr.clear()
+    runner_assert_eq(r, tr.size(), 0, "tr.clear() resets size to 0")
 
     # ═══════════════════════════════════════════════════════════
-    # 10. Destructuring: Tuples & Maps
+    # 4. BitSet Tests
     # ═══════════════════════════════════════════════════════════
-    let (t_prefix, t_count) = ("Custom", 42)
-    runner_assert_str_eq(r, t_prefix, "Custom", "tuple destructuring binds string")
-    runner_assert_eq(r, t_count, 42, "tuple destructuring binds integer")
+    let bs = pkg::new_bit_set(128)
+    runner_assert_eq(r, bs.capacity(), 128, "bitset capacity is 128")
+    runner_assert_eq(r, bs.count_ones(), 0, "bitset starts with zero 1s")
 
-    let pkg_info = { "name": "datatypes", "version": "0.1.0" }
-    let { name: info_name, version: info_ver } = pkg_info
-    runner_assert_str_eq(r, info_name, "datatypes", "map destructuring extracts key name")
-    runner_assert_str_eq(r, info_ver, "0.1.0", "map destructuring extracts key version")
+    runner_assert_true(r, bs.set(0), "bs.set(0) succeeds")
+    runner_assert_true(r, bs.set(5), "bs.set(5) succeeds")
+    runner_assert_true(r, bs.set(70), "bs.set(70) across word boundary succeeds")
+    runner_assert_eq(r, bs.count_ones(), 3, "count_ones is 3")
+
+    runner_assert_true(r, bs.get(0), "bs.get(0) is true")
+    runner_assert_true(r, bs.get(5), "bs.get(5) is true")
+    runner_assert_true(r, bs.get(70), "bs.get(70) is true")
+    runner_assert_false(r, bs.get(1), "bs.get(1) is false")
+
+    runner_assert_true(r, bs.clear_bit(5), "bs.clear_bit(5) succeeds")
+    runner_assert_false(r, bs.get(5), "bs.get(5) is false after clear")
+    runner_assert_eq(r, bs.count_ones(), 2, "count_ones is 2 after clearing 5")
+
+    runner_assert_true(r, bs.toggle(0), "bs.toggle(0) flips to 0")
+    runner_assert_false(r, bs.get(0), "bs.get(0) is false")
+    runner_assert_true(r, bs.toggle(0), "bs.toggle(0) flips back to 1")
+    runner_assert_true(r, bs.get(0), "bs.get(0) is true")
+
+    # Set operations
+    let b1 = pkg::new_bit_set(64)
+    b1.set(1)
+    b1.set(2)
+    let b2 = pkg::new_bit_set(64)
+    b2.set(2)
+    b2.set(3)
+
+    let b_union = b1.union(b2)
+    runner_assert_eq(r, b_union.count_ones(), 3, "union has 3 bits (1, 2, 3)")
+    runner_assert_true(r, b_union.get(1), "union has 1")
+    runner_assert_true(r, b_union.get(2), "union has 2")
+    runner_assert_true(r, b_union.get(3), "union has 3")
+
+    let b_inter = b1.intersection(b2)
+    runner_assert_eq(r, b_inter.count_ones(), 1, "intersection has 1 bit (2)")
+    runner_assert_true(r, b_inter.get(2), "intersection has 2")
+
+    let b_arr = b1.to_array()
+    runner_assert_eq(r, len(b_arr), 2, "b1.to_array() has 2 elements")
+    runner_assert_eq(r, b_arr[0], 1, "b1 bit 0 is 1")
+    runner_assert_eq(r, b_arr[1], 2, "b1 bit 1 is 2")
 
     # ═══════════════════════════════════════════════════════════
-    # 11. Feature-Gated API (`extras`, default-on)
+    # 5. BloomFilter Tests
     # ═══════════════════════════════════════════════════════════
-    @cfg(feature = "extras")
-    let extra_res = pkg::extra_greeting("Alya")
-    @cfg(feature = "extras")
-    runner_assert_str_eq(r, extra_res, "Howdy, Alya!", "pkg::extra_greeting returns extras greeting")
+    let bf = pkg::new_bloom_filter(100, 0.01)
+    runner_assert_eq(r, bf.count(), 0, "bloom filter starts empty")
+
+    bf.add("user_alice")
+    bf.add("user_bob")
+    bf.add("user_charlie")
+    runner_assert_eq(r, bf.count(), 3, "bloom filter count is 3")
+
+    runner_assert_true(r, bf.contains("user_alice"), "bf contains 'user_alice'")
+    runner_assert_true(r, bf.contains("user_bob"), "bf contains 'user_bob'")
+    runner_assert_true(r, bf.contains("user_charlie"), "bf contains 'user_charlie'")
+    runner_assert_false(r, bf.contains("non_existent_key_999xyz"), "bf does not contain missing key")
+
+    bf.clear()
+    runner_assert_eq(r, bf.count(), 0, "bf.clear() resets count")
+    runner_assert_false(r, bf.contains("user_alice"), "bf does not contain alice after clear")
 
     let failed = runner_summary(r)
     if failed > 0
-        exit(1)
+        say f"Test failure: {failed} test(s) failed."
     end
 end
 

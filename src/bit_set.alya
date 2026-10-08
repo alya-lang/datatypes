@@ -1,0 +1,230 @@
+## BitSet Implementation
+##
+## Part of the Alya Language package ecosystem (https://github.com/alya-lang).
+## Provides an efficient compact bit array backed by 64-bit integer words.
+
+import "./types.alya"
+
+## Computes population count (Hamming weight) of a 64-bit word.
+function word_popcount(w: int) -> int
+    let count = 0
+    let i = 0
+    while i < 64
+        if (w & (1 << i)) != 0
+            count += 1
+        end
+        i += 1
+    end
+    return count
+end
+
+## Creates a new BitSet with capacity for at least `num_bits` bits.
+##
+## ### Parameters
+## - `num_bits`: Minimum number of bits to support. Defaults to 64.
+##
+## ### Returns
+## A new `BitSet` instance with all bits initially zeroed.
+pub function make_bit_set(num_bits: int = 64) -> BitSet
+    if num_bits < 1
+        num_bits = 64
+    end
+    let num_words = (num_bits + 63) / 64
+    let words = []
+    let i = 0
+    while i < num_words
+        words.push(0)
+        i += 1
+    end
+    return BitSet {
+        words: words,
+        num_bits: num_bits
+    }
+end
+
+## Sets the bit at index `bit` to 1.
+##
+## ### Parameters
+## - `bit`: Zero-based bit index.
+##
+## ### Returns
+## True if the bit was successfully set, false if index is out of bounds.
+pub function BitSet.set(self, bit: int) -> bool
+    if bit < 0 or bit >= self.num_bits
+        return false
+    end
+    let word_idx = bit / 64
+    let bit_idx = bit % 64
+    let mask = 1 << bit_idx
+    self.words[word_idx] = self.words[word_idx] | mask
+    return true
+end
+
+## Clears the bit at index `bit` (sets it to 0).
+##
+## ### Parameters
+## - `bit`: Zero-based bit index.
+##
+## ### Returns
+## True if successfully cleared, false if out of bounds.
+pub function BitSet.clear_bit(self, bit: int) -> bool
+    if bit < 0 or bit >= self.num_bits
+        return false
+    end
+    let word_idx = bit / 64
+    let bit_idx = bit % 64
+    let mask = 1 << bit_idx
+    # Bitwise clear: word & (~mask)
+    # Using XOR if the bit was present, or clearing with subtraction
+    if (self.words[word_idx] & mask) != 0
+        self.words[word_idx] = self.words[word_idx] ^ mask
+    end
+    return true
+end
+
+## Inverts (flips) the bit at index `bit`.
+##
+## ### Parameters
+## - `bit`: Zero-based bit index.
+##
+## ### Returns
+## True if successfully toggled, false if out of bounds.
+pub function BitSet.toggle(self, bit: int) -> bool
+    if bit < 0 or bit >= self.num_bits
+        return false
+    end
+    let word_idx = bit / 64
+    let bit_idx = bit % 64
+    let mask = 1 << bit_idx
+    self.words[word_idx] = self.words[word_idx] ^ mask
+    return true
+end
+
+## Tests whether the bit at index `bit` is set to 1.
+##
+## ### Parameters
+## - `bit`: Zero-based bit index.
+##
+## ### Returns
+## True if set to 1, false if 0 or out of bounds.
+pub function BitSet.get(self, bit: int) -> bool
+    if bit < 0 or bit >= self.num_bits
+        return false
+    end
+    let word_idx = bit / 64
+    let bit_idx = bit % 64
+    let mask = 1 << bit_idx
+    return (self.words[word_idx] & mask) != 0
+end
+
+## Returns the total number of set bits (1s) across the entire bitset.
+##
+## ### Returns
+## Number of 1s (population count).
+pub function BitSet.count_ones(self) -> int
+    let total = 0
+    let n = len(self.words)
+    let i = 0
+    while i < n
+        total += word_popcount(self.words[i])
+        i += 1
+    end
+    return total
+end
+
+## Returns the maximum bit capacity configured for this bitset.
+##
+## ### Returns
+## Bit capacity.
+pub function BitSet.capacity(self) -> int
+    return self.num_bits
+end
+
+## Resets all bits in the bitset to 0.
+##
+## ### Returns
+## No return value.
+pub function BitSet.clear_all(self)
+    let n = len(self.words)
+    let i = 0
+    while i < n
+        self.words[i] = 0
+        i += 1
+    end
+end
+
+## Computes the bitwise union (OR) with another BitSet and returns a new BitSet.
+##
+## ### Parameters
+## - `other`: The second BitSet operand.
+##
+## ### Returns
+## A new `BitSet` containing bits set in either `self` or `other`.
+pub function BitSet.union(self, other: BitSet) -> BitSet
+    let max_bits = self.num_bits
+    if other.num_bits > max_bits
+        max_bits = other.num_bits
+    end
+    let res = make_bit_set(max_bits)
+    let n = len(res.words)
+    let i = 0
+    while i < n
+        let w1 = 0
+        let w2 = 0
+        if i < len(self.words)
+            w1 = self.words[i]
+        end
+        if i < len(other.words)
+            w2 = other.words[i]
+        end
+        res.words[i] = w1 | w2
+        i += 1
+    end
+    return res
+end
+
+## Computes the bitwise intersection (AND) with another BitSet and returns a new BitSet.
+##
+## ### Parameters
+## - `other`: The second BitSet operand.
+##
+## ### Returns
+## A new `BitSet` containing bits set in both `self` and `other`.
+pub function BitSet.intersection(self, other: BitSet) -> BitSet
+    let min_bits = self.num_bits
+    if other.num_bits < min_bits
+        min_bits = other.num_bits
+    end
+    let res = make_bit_set(min_bits)
+    let n = len(res.words)
+    let i = 0
+    while i < n
+        let w1 = 0
+        let w2 = 0
+        if i < len(self.words)
+            w1 = self.words[i]
+        end
+        if i < len(other.words)
+            w2 = other.words[i]
+        end
+        res.words[i] = w1 & w2
+        i += 1
+    end
+    return res
+end
+
+## Returns an array containing the indices of all bits set to 1.
+##
+## ### Returns
+## Array of integer bit indices.
+pub function BitSet.to_array(self)
+    let res = []
+    let i = 0
+    while i < self.num_bits
+        if self.get(i)
+            res.push(i)
+        end
+        i += 1
+    end
+    return res
+end

@@ -7,157 +7,97 @@ function main()
     say "=== datatypes Package Showcase ==="
     say ""
 
-    # ───────────────────────────────────────────────────────────
-    # 1. Basic Facade Greeting
-    # ───────────────────────────────────────────────────────────
-    say "--- 1. Facade Greeting ---"
-    let greeting_default = pkg::hello()
-    say "Default: " + greeting_default
-
-    let greeting_custom = pkg::hello("Alya Developer")
-    say "Custom:  " + greeting_custom
-    say ""
-
-    # ───────────────────────────────────────────────────────────
-    # 2. Enumeration Values
-    # ───────────────────────────────────────────────────────────
-    say "--- 2. Enumeration Values ---"
-    say "DatatypesStatus.Pending  = " + str(pkg::DatatypesStatus.Pending)
-    say "DatatypesStatus.Active   = " + str(pkg::DatatypesStatus.Active)
-    say "DatatypesStatus.Archived = " + str(pkg::DatatypesStatus.Archived)
-    say "DatatypesStatus.Error    = " + str(pkg::DatatypesStatus.Error)
-
-    say "DatatypesPriority.Low      = " + str(pkg::DatatypesPriority.Low)
-    say "DatatypesPriority.Normal   = " + str(pkg::DatatypesPriority.Normal)
-    say "DatatypesPriority.High     = " + str(pkg::DatatypesPriority.High)
-    say "DatatypesPriority.Critical = " + str(pkg::DatatypesPriority.Critical)
-
-    say "DatatypesStyle.Standard = " + str(pkg::DatatypesStyle.Standard)
-    say "DatatypesStyle.Formal   = " + str(pkg::DatatypesStyle.Formal)
-    say "DatatypesStyle.Casual   = " + str(pkg::DatatypesStyle.Casual)
-    say ""
-
-    # ───────────────────────────────────────────────────────────
-    # 3. Struct Models & Constructors
-    # ───────────────────────────────────────────────────────────
-    say "--- 3. Struct Models & Constructors ---"
-    let cfg = pkg::new_config("Community", 5, pkg::DatatypesPriority.High, pkg::DatatypesStyle.Formal)
-    say "Config Name:     " + cfg.name
-    say "Config Count:    " + str(cfg.count)
-    say "Config Priority: " + str(cfg.priority)
-    say "Config Style:    " + str(cfg.style)
-    say "Config Enabled:  " + str(cfg.enabled)
-
-    let stats = pkg::make_stats(100, 92, 6, 2)
-    say "Stats Total:     " + str(stats.total)
-    say "Stats Passed:    " + str(stats.passed)
-    say "Stats Failed:    " + str(stats.failed)
-    say "Stats Skipped:   " + str(stats.skipped)
-    say "Stats Checked:   " + str(stats.total_checked())
-    say "Stats Rate:      " + stats.success_rate()
-    say ""
-
-    # ───────────────────────────────────────────────────────────
-    # 4. Struct Methods & Immutability
-    # ───────────────────────────────────────────────────────────
-    say "--- 4. Struct Methods & Immutability ---"
-    say "Summary:         " + cfg.summary()
-    say "Description:     " + cfg.describe()
-    say "Is Valid:        " + str(cfg.is_valid())
-    say "Is Enabled:      " + str(cfg.is_enabled())
-
-    let updated_cfg = cfg.with_name("Core Contributors")
-    say "Updated Name:    " + updated_cfg.name
-    say "Original Name:   " + cfg.name
-
-    let critical_cfg = cfg.with_priority(pkg::DatatypesPriority.Critical)
-    say "Updated Prio:    " + str(critical_cfg.priority)
-    say ""
-
-    # ───────────────────────────────────────────────────────────
-    # 5. Result Container Pattern
-    # ───────────────────────────────────────────────────────────
-    say "--- 5. Result Container Pattern ---"
-    let ok_res = pkg::ok_result(42, "Processed payload successfully")
-    say "Ok Result is_ok:    " + str(ok_res.is_ok())
-    say "Ok Result message:  " + ok_res.message
-    say "Ok Result unwrap:   " + ok_res.unwrap_or("fallback")
-
-    let err_res = pkg::error_result("Processing failed", ["Disk full", "Permission denied"])
-    say "Err Result is_err:  " + str(err_res.is_error())
-    say "Err Result message: " + err_res.message
-    say "Err Result unwrap:  " + err_res.unwrap_or("safe default")
-    say "Err Count:          " + str(len(err_res.errors))
-    say ""
-
-    # ───────────────────────────────────────────────────────────
-    # 6. Structural Duck Typing (Interfaces)
-    # ───────────────────────────────────────────────────────────
-    say "--- 6. Duck Typing (Interfaces) ---"
-    if cfg is pkg::Summarizable
-        say "Summarizable dispatch: " + pkg::format_summary(cfg)
+    # 1. RingBuffer
+    say "--- 1. RingBuffer (Circular Buffer) ---"
+    let rb = pkg::new_ring_buffer(4)
+    rb.push("alpha")
+    rb.push("beta")
+    rb.push("gamma")
+    say f"RingBuffer size: {rb.size()} / {rb.capacity()}"
+    say f"Oldest item (peek): {rb.peek()}"
+    say f"Newest item (peek_last): {rb.peek_last()}"
+    say "Buffer items in FIFO order:"
+    let rb_items = rb.to_array()
+    for item in rb_items
+        say f"  - {item}"
     end
-    if cfg is pkg::Describable
-        say "Describable dispatch:  " + pkg::format_description(cfg)
+
+    # Overwrite on capacity
+    rb.push("delta")
+    rb.push_overwrite("epsilon")
+    say f"Popped oldest after overwrite: {rb.pop()}"
+    say ""
+
+    # 2. DoublyLinkedList
+    say "--- 2. DoublyLinkedList ---"
+    let list = pkg::new_linked_list()
+    list.push_back("Task B")
+    list.push_front("Task A")
+    list.push_back("Task C")
+    say f"LinkedList size: {list.size()}"
+    say f"Head: {list.peek_front()}"
+    say f"Tail: {list.peek_back()}"
+    say "List items from head to tail:"
+    let list_items = list.to_array()
+    for item in list_items
+        say f"  - {item}"
+    end
+    list.remove("Task B")
+    say f"Size after removing 'Task B': {list.size()}"
+    say ""
+
+    # 3. Trie (Prefix Tree)
+    say "--- 3. Trie (Prefix Tree) ---"
+    let tr = pkg::new_trie()
+    tr.insert("apple", 10)
+    tr.insert("app", 20)
+    tr.insert("application", 30)
+    tr.insert("banana", 40)
+    let has_app = tr.contains("app")
+    let has_orange = tr.contains("orange")
+    let starts_app = tr.starts_with("app")
+    say f"Trie distinct keys: {tr.size()}"
+    say f"Contains 'app': {has_app}"
+    say f"Contains 'orange': {has_orange}"
+    say f"Starts with 'app': {starts_app}"
+    say "Keys matching prefix 'app':"
+    say tr.keys_with_prefix("app")
+    say ""
+
+    # 4. BitSet
+    say "--- 4. BitSet ---"
+    let bs = pkg::new_bit_set(64)
+    bs.set(0)
+    bs.set(10)
+    bs.set(20)
+    let bit10 = bs.get(10)
+    let bit11 = bs.get(11)
+    say f"BitSet capacity: {bs.capacity()}"
+    say f"Set bits count: {bs.count_ones()}"
+    say f"Bit 10 is set: {bit10}"
+    say f"Bit 11 is set: {bit11}"
+    say "Active bit indices:"
+    let bs_bits = bs.to_array()
+    for b in bs_bits
+        say f"  - bit {b}"
     end
     say ""
 
-    # ───────────────────────────────────────────────────────────
-    # 7. Workflow Processing & Batching
-    # ───────────────────────────────────────────────────────────
-    say "--- 7. Workflow Processing & Batching ---"
-    let single_res = pkg::process("Analytics", 3, pkg::DatatypesPriority.High)
-    say "Single Process Result: " + pkg::format_result(single_res)
-
-    let items = ["Alpha", "Beta", "Gamma"]
-    let batch_res = pkg::process_batch(items)
-    say "Batch count: " + str(len(batch_res))
-    for b in batch_res
-        say "  - " + b
-    end
+    # 5. BloomFilter
+    say "--- 5. BloomFilter ---"
+    let bf = pkg::new_bloom_filter(100, 0.01)
+    bf.add("email_alice@example.com")
+    bf.add("email_bob@example.com")
+    let has_alice = bf.contains("email_alice@example.com")
+    let has_bob = bf.contains("email_bob@example.com")
+    let has_charlie = bf.contains("email_charlie@example.com")
+    say f"BloomFilter items added: {bf.count()}"
+    say f"Contains alice: {has_alice}"
+    say f"Contains bob: {has_bob}"
+    say f"Contains charlie: {has_charlie}"
     say ""
 
-    # ───────────────────────────────────────────────────────────
-    # 8. Control Flow & Pattern Matching Utilities
-    # ───────────────────────────────────────────────────────────
-    say "--- 8. Utility Functions ---"
-    say "Clamp (-5 in [0, 100]):  " + str(pkg::clamp(-5, 0, 100))
-    say "Clamp (50 in [0, 100]):  " + str(pkg::clamp(50, 0, 100))
-    say "Clamp (150 in [0, 100]): " + str(pkg::clamp(150, 0, 100))
-
-    say "Pluralize (1):           " + pkg::pluralize(1, "item", "items")
-    say "Pluralize (5):           " + pkg::pluralize(5, "item", "items")
-
-    let repeated = pkg::repeat_string("echo", 3)
-    say "Repeat string count:     " + str(len(repeated))
-    say ""
-
-    # ───────────────────────────────────────────────────────────
-    # 9. Destructuring: Tuples & Maps
-    # ───────────────────────────────────────────────────────────
-    say "--- 9. Destructuring ---"
-    let (label, count) = ("example", 42)
-    say "Tuple label: " + label
-    say "Tuple count: " + str(count)
-
-    let info = { "package": "datatypes", "version": "0.1.0" }
-    let { package: pkg_name, version: pkg_ver } = info
-    say "Map package: " + pkg_name
-    say "Map version: " + pkg_ver
-    say ""
-
-    # ───────────────────────────────────────────────────────────
-    # 10. Feature-Gated API (`extras`, default-on)
-    # ───────────────────────────────────────────────────────────
-    say "--- 10. Feature-Gated Extras ---"
-    @cfg(feature = "extras")
-    say "Extras greeting: " + pkg::extra_greeting("Developer")
-    @cfg(not(feature = "extras"))
-    say "Extras greeting: (disabled — rebuild with --features extras)"
-    say ""
-
-    say ""
-    say "Done!"
+    say "=== All datatypes demonstrations completed! ==="
 end
 
 main()
