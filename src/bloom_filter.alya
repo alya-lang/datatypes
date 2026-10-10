@@ -9,7 +9,7 @@ import "./bit_set.alya"
 
 ## Formats any item into a canonical string for hashing.
 function item_to_string(item) -> string
-    return "{item}"
+    return f"{item}"
 end
 
 ## Creates a new BloomFilter configured for expected capacity and false positive probability.
