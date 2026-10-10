@@ -8,6 +8,9 @@
 # ───────────────────────────────────────────────────────────────
 
 ## Fixed-capacity circular buffer backed by a pre-allocated array.
+##
+## Requires the `ring_buffer` feature (default-on).
+@cfg(feature = "ring_buffer")
 pub struct RingBuffer
     data,
     head,
@@ -17,6 +20,9 @@ pub struct RingBuffer
 end
 
 ## Node element inside a DoublyLinkedList.
+##
+## Requires the `linked_list` feature (default-on).
+@cfg(feature = "linked_list")
 pub struct ListNode
     val,
     next,
@@ -24,6 +30,9 @@ pub struct ListNode
 end
 
 ## Doubly-linked list maintaining head and tail references with O(1) ends.
+##
+## Requires the `linked_list` feature (default-on).
+@cfg(feature = "linked_list")
 pub struct DoublyLinkedList
     head,
     tail,
@@ -31,6 +40,9 @@ pub struct DoublyLinkedList
 end
 
 ## Node element inside a Trie prefix tree.
+##
+## Requires the `trie` feature (default-on).
+@cfg(feature = "trie")
 pub struct TrieNode
     children,
     is_end,
@@ -38,18 +50,27 @@ pub struct TrieNode
 end
 
 ## Prefix tree for fast key lookups, autocompletion, and prefix matching.
+##
+## Requires the `trie` feature (default-on).
+@cfg(feature = "trie")
 pub struct Trie
     root,
     count
 end
 
 ## Dynamic bit array backed by 64-bit integer words.
+##
+## Requires the `bit_set` feature (default-on).
+@cfg(feature = "bit_set")
 pub struct BitSet
     words,
     num_bits
 end
 
 ## Space-efficient probabilistic data structure for set membership testing.
+##
+## Requires the `bloom_filter` feature (default-on, implies `bit_set`).
+@cfg(feature = "bloom_filter")
 pub struct BloomFilter
     bit_set,
     num_hashes,

@@ -4,11 +4,8 @@
 import "std/test"
 import "../src/lib.alya" as pkg
 
-function main()
-    test_suite("datatypes Test Suite")
-    let r = runner_new()
-
-    # ═══════════════════════════════════════════════════════════
+@cfg(feature = "ring_buffer")
+function test_ring_buffer(r)
     # 1. RingBuffer Tests
     # ═══════════════════════════════════════════════════════════
     let rb = pkg::new_ring_buffer(3)
@@ -50,6 +47,14 @@ function main()
     runner_assert_true(r, rb.is_empty(), "rb.clear() resets buffer")
 
     # ═══════════════════════════════════════════════════════════
+end
+
+@cfg(not(feature = "ring_buffer"))
+function test_ring_buffer(r)
+end
+
+@cfg(feature = "linked_list")
+function test_linked_list(r)
     # 2. DoublyLinkedList Tests
     # ═══════════════════════════════════════════════════════════
     let list = pkg::new_linked_list()
@@ -87,6 +92,14 @@ function main()
     runner_assert_true(r, list.is_empty(), "list.clear() empties list")
 
     # ═══════════════════════════════════════════════════════════
+end
+
+@cfg(not(feature = "linked_list"))
+function test_linked_list(r)
+end
+
+@cfg(feature = "trie")
+function test_trie(r)
     # 3. Trie Tests
     # ═══════════════════════════════════════════════════════════
     let tr = pkg::new_trie()
@@ -119,6 +132,14 @@ function main()
     runner_assert_eq(r, tr.size(), 0, "tr.clear() resets size to 0")
 
     # ═══════════════════════════════════════════════════════════
+end
+
+@cfg(not(feature = "trie"))
+function test_trie(r)
+end
+
+@cfg(feature = "bit_set")
+function test_bit_set(r)
     # 4. BitSet Tests
     # ═══════════════════════════════════════════════════════════
     let bs = pkg::new_bit_set(128)
@@ -168,6 +189,14 @@ function main()
     runner_assert_eq(r, b_arr[1], 2, "b1 bit 1 is 2")
 
     # ═══════════════════════════════════════════════════════════
+end
+
+@cfg(not(feature = "bit_set"))
+function test_bit_set(r)
+end
+
+@cfg(feature = "bloom_filter")
+function test_bloom_filter(r)
     # 5. BloomFilter Tests
     # ═══════════════════════════════════════════════════════════
     let bf = pkg::new_bloom_filter(100, 0.01)
@@ -186,6 +215,22 @@ function main()
     bf.clear()
     runner_assert_eq(r, bf.count(), 0, "bf.clear() resets count")
     runner_assert_false(r, bf.contains("user_alice"), "bf does not contain alice after clear")
+
+end
+
+@cfg(not(feature = "bloom_filter"))
+function test_bloom_filter(r)
+end
+
+function main()
+    test_suite("datatypes Test Suite")
+    let r = runner_new()
+
+    test_ring_buffer(r)
+    test_linked_list(r)
+    test_trie(r)
+    test_bit_set(r)
+    test_bloom_filter(r)
 
     let failed = runner_summary(r)
     if failed > 0

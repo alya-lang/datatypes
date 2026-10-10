@@ -5,10 +5,15 @@
 ## Trie, BitSet, and BloomFilter.
 
 import "./types.alya"
+@cfg(feature = "ring_buffer")
 import "./ring_buffer.alya"
+@cfg(feature = "linked_list")
 import "./linked_list.alya"
+@cfg(feature = "trie")
 import "./trie.alya"
+@cfg(feature = "bit_set")
 import "./bit_set.alya"
+@cfg(feature = "bloom_filter")
 import "./bloom_filter.alya"
 
 # ───────────────────────────────────────────────────────────────
@@ -28,6 +33,9 @@ import "./bloom_filter.alya"
 ## let rb = new_ring_buffer(8)
 ## rb.push(42)
 ## ```
+##
+## Requires the `ring_buffer` feature (default-on).
+@cfg(feature = "ring_buffer")
 pub function new_ring_buffer(capacity: int = 16) -> RingBuffer
     return make_ring_buffer(capacity)
 end
@@ -43,6 +51,9 @@ end
 ## list.push_back("world")
 ## list.push_front("hello")
 ## ```
+##
+## Requires the `linked_list` feature (default-on).
+@cfg(feature = "linked_list")
 pub function new_linked_list() -> DoublyLinkedList
     return make_linked_list()
 end
@@ -58,6 +69,9 @@ end
 ## tr.insert("alya", 1)
 ## say tr.starts_with("al") # true
 ## ```
+##
+## Requires the `trie` feature (default-on).
+@cfg(feature = "trie")
 pub function new_trie() -> Trie
     return make_trie()
 end
@@ -76,6 +90,9 @@ end
 ## bs.set(5)
 ## say bs.get(5) # true
 ## ```
+##
+## Requires the `bit_set` feature (default-on).
+@cfg(feature = "bit_set")
 pub function new_bit_set(num_bits: int = 64) -> BitSet
     return make_bit_set(num_bits)
 end
@@ -96,6 +113,9 @@ end
 ## say bf.contains("user_123") # true
 ## say bf.contains("unknown")  # false
 ## ```
+##
+## Requires the `bloom_filter` feature (default-on, implies `bit_set`).
+@cfg(feature = "bloom_filter")
 pub function new_bloom_filter(expected_items: int = 1000, false_positive_rate: float = 0.01) -> BloomFilter
     return make_bloom_filter(expected_items, false_positive_rate)
 end

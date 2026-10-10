@@ -29,7 +29,7 @@ datatypes/
 ├── .editorconfig           # Uniform formatting rules across IDEs and editors
 ├── .gitignore              # Ecosystem standard ignore filters
 ├── .vscode/                # VS Code workspace settings, DAP launch configurations & tasks
-├── alya.toml               # Package manifest with dependencies and metadata
+├── alya.toml               # Package manifest with dependencies, [features] and metadata
 ├── src/
 │   ├── lib.alya            # Public API facade and constructor exports
 │   ├── types.alya          # Core struct definitions (RingBuffer, Trie, BitSet, etc.)
@@ -65,6 +65,26 @@ Or install it directly using the Alya package CLI:
 ```bash
 alya add datatypes --git https://github.com/alya-lang/datatypes --branch main
 alya install
+```
+
+### Package Features
+
+| Feature | Default | Description |
+|:---|:---:|:---|
+| `ring_buffer` | ✅ | Fixed-capacity circular FIFO buffer (`new_ring_buffer`). |
+| `linked_list` | ✅ | Doubly-linked list with O(1) front/back ops (`new_linked_list`). |
+| `trie` | ✅ | Prefix tree for search/autocompletion (`new_trie`). |
+| `bit_set` | ✅ | Compact word-backed bit array (`new_bit_set`). |
+| `bloom_filter` | ✅ | Probabilistic membership filter, implies `bit_set` (`new_bloom_filter`). |
+
+```bash
+# Full build (default)
+alya install
+alya test
+
+# Slim build (no data structures; helpers become no-ops)
+alya install --no-default-features
+alya test --no-default-features
 ```
 
 ---

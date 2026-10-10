@@ -4,9 +4,8 @@
 import "std/test"
 import "../src/lib.alya" as pkg
 
-function main()
-    let runner = bench_runner("datatypes Micro-Benchmarks")
-
+@cfg(feature = "ring_buffer")
+function bench_ring_buffer(runner)
     # Bench 1: RingBuffer push + pop throughput — 50k iterations
     let rb = pkg::new_ring_buffer(32)
     bench_start(runner, 50000)
@@ -20,6 +19,14 @@ function main()
     end
     bench_stop(runner, "RingBuffer push/pop 50k ops")
 
+end
+
+@cfg(not(feature = "ring_buffer"))
+function bench_ring_buffer(runner)
+end
+
+@cfg(feature = "linked_list")
+function bench_linked_list(runner)
     # Bench 2: DoublyLinkedList push_back + pop_front — 50k iterations
     let list = pkg::new_linked_list()
     bench_start(runner, 50000)
@@ -33,6 +40,14 @@ function main()
     end
     bench_stop(runner, "DoublyLinkedList push/pop 50k ops")
 
+end
+
+@cfg(not(feature = "linked_list"))
+function bench_linked_list(runner)
+end
+
+@cfg(feature = "trie")
+function bench_trie(runner)
     # Bench 3: Trie insert & contains — 10k iterations
     let tr = pkg::new_trie()
     bench_start(runner, 10000)
@@ -44,6 +59,14 @@ function main()
     end
     bench_stop(runner, "Trie insert + lookup 10k ops")
 
+end
+
+@cfg(not(feature = "trie"))
+function bench_trie(runner)
+end
+
+@cfg(feature = "bit_set")
+function bench_bit_set(runner)
     # Bench 4: BitSet set & get — 100k iterations
     let bs = pkg::new_bit_set(256)
     bench_start(runner, 100000)
@@ -56,6 +79,14 @@ function main()
     end
     bench_stop(runner, "BitSet set/get 100k ops")
 
+end
+
+@cfg(not(feature = "bit_set"))
+function bench_bit_set(runner)
+end
+
+@cfg(feature = "bloom_filter")
+function bench_bloom_filter(runner)
     # Bench 5: BloomFilter add & contains — 20k iterations
     let bf = pkg::new_bloom_filter(1000, 0.01)
     bench_start(runner, 20000)
@@ -66,6 +97,21 @@ function main()
         m += 1
     end
     bench_stop(runner, "BloomFilter add/check 20k ops")
+
+end
+
+@cfg(not(feature = "bloom_filter"))
+function bench_bloom_filter(runner)
+end
+
+function main()
+    let runner = bench_runner("datatypes Micro-Benchmarks")
+
+    bench_ring_buffer(runner)
+    bench_linked_list(runner)
+    bench_trie(runner)
+    bench_bit_set(runner)
+    bench_bloom_filter(runner)
 
     bench_summary(runner)
 end

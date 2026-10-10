@@ -3,10 +3,8 @@
 
 import "../src/lib.alya" as pkg
 
-function main()
-    say "=== datatypes Package Showcase ==="
-    say ""
-
+@cfg(feature = "ring_buffer")
+function demo_ring_buffer()
     # 1. RingBuffer
     say "--- 1. RingBuffer (Circular Buffer) ---"
     let rb = pkg::new_ring_buffer(4)
@@ -28,6 +26,14 @@ function main()
     say f"Popped oldest after overwrite: {rb.pop()}"
     say ""
 
+end
+
+@cfg(not(feature = "ring_buffer"))
+function demo_ring_buffer()
+end
+
+@cfg(feature = "linked_list")
+function demo_linked_list()
     # 2. DoublyLinkedList
     say "--- 2. DoublyLinkedList ---"
     let list = pkg::new_linked_list()
@@ -46,6 +52,14 @@ function main()
     say f"Size after removing 'Task B': {list.size()}"
     say ""
 
+end
+
+@cfg(not(feature = "linked_list"))
+function demo_linked_list()
+end
+
+@cfg(feature = "trie")
+function demo_trie()
     # 3. Trie (Prefix Tree)
     say "--- 3. Trie (Prefix Tree) ---"
     let tr = pkg::new_trie()
@@ -64,6 +78,14 @@ function main()
     say tr.keys_with_prefix("app")
     say ""
 
+end
+
+@cfg(not(feature = "trie"))
+function demo_trie()
+end
+
+@cfg(feature = "bit_set")
+function demo_bit_set()
     # 4. BitSet
     say "--- 4. BitSet ---"
     let bs = pkg::new_bit_set(64)
@@ -83,6 +105,14 @@ function main()
     end
     say ""
 
+end
+
+@cfg(not(feature = "bit_set"))
+function demo_bit_set()
+end
+
+@cfg(feature = "bloom_filter")
+function demo_bloom_filter()
     # 5. BloomFilter
     say "--- 5. BloomFilter ---"
     let bf = pkg::new_bloom_filter(100, 0.01)
@@ -96,6 +126,22 @@ function main()
     say f"Contains bob: {has_bob}"
     say f"Contains charlie: {has_charlie}"
     say ""
+
+end
+
+@cfg(not(feature = "bloom_filter"))
+function demo_bloom_filter()
+end
+
+function main()
+    say "=== datatypes Package Showcase ==="
+    say ""
+
+    demo_ring_buffer()
+    demo_linked_list()
+    demo_trie()
+    demo_bit_set()
+    demo_bloom_filter()
 
     say "=== All datatypes demonstrations completed! ==="
 end
